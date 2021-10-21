@@ -2,6 +2,8 @@ import BasicSkeleton from '../chapter-01/BasicSkeleton';
 import MaterialsLight from '../chapter-01/MaterialsLight';
 import MaterialsLightAnimation from '../chapter-01/MaterialsLightAnimation';
 import ControlGui from '../chapter-01/ControlGui';
+import BasicScene from '../chapter-02/BasicScene';
+import CustomGeometry from '../chapter-02/CustomGeometry';
 
 export const Routes = [
   {
@@ -26,6 +28,21 @@ export const Routes = [
         name: 'ControlGui',
         path: '/ControlGui',
         component: ControlGui
+      }
+    ]
+  },
+  {
+    name: 'chapter-02',
+    children: [
+      {
+        name: 'BasicScene',
+        path: '/BasicScene',
+        component: BasicScene
+      },
+      {
+        name: 'CustomGeometry',
+        path: '/CustomGeometry',
+        component: CustomGeometry
       }
     ]
   }
