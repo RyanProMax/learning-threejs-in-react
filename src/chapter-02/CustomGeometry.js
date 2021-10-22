@@ -1,7 +1,8 @@
 import * as THREE from 'three';
+import { createMultiMaterialObject } from 'three/examples/jsm/utils/SceneUtils';
 import { useRef, useEffect, useCallback, useState } from 'react';
 import Stats from '../libs/Stats';
-import DatGui, { DatNumber, DatButton } from 'react-dat-gui';
+import DatGui, { DatNumber, DatFolder, DatButton } from 'react-dat-gui';
 
 export default function CustomGeometry() {
   const CustomGeometry = useRef(null);
@@ -12,7 +13,7 @@ export default function CustomGeometry() {
     setData(prevData => ({ ...prevData, ...newData }));
   };
 
-  function init() {
+  const init = useCallback(() => {
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
     const renderer = new THREE.WebGLRenderer();
@@ -56,7 +57,6 @@ export default function CustomGeometry() {
     renderer.render(scene, camera);
 
     // custom geometry
-    // 书中示例 generateFace 构造器在 r126 已被移除，这里转换成新语法
     const vertices = [
       new THREE.Vector3(1, 3, 1),
       new THREE.Vector3(1, 3, -1),
@@ -68,57 +68,80 @@ export default function CustomGeometry() {
       new THREE.Vector3(-1, -1, 1)
     ];
 
-    const generateFace = (vertice1, vertice2, vertice3) => {
-      return [vertices[vertice1], vertices[vertice2], vertices[vertice3]];
+    // 书中示例的 Face3 构造器在 r126 已被移除，这里转换成新语法
+    const generatePoints = vertices => {
+      const generateFace = (vertice1, vertice2, vertice3) => {
+        return [vertices[vertice1], vertices[vertice2], vertices[vertice3]];
+      };
+      const faces = [
+        generateFace(0, 2, 1),
+        generateFace(2, 3, 1),
+        generateFace(4, 6, 5),
+        generateFace(6, 7, 5),
+        generateFace(4, 5, 1),
+        generateFace(5, 0, 1),
+        generateFace(7, 6, 2),
+        generateFace(6, 3, 2),
+        generateFace(5, 7, 0),
+        generateFace(7, 2, 0),
+        generateFace(1, 3, 4),
+        generateFace(3, 6, 4)
+      ];
+      return faces.flat(1);
     };
 
-    const faces = [
-      generateFace(0, 2, 1),
-      generateFace(2, 3, 1),
-      generateFace(4, 6, 5),
-      generateFace(6, 7, 5),
-      generateFace(4, 5, 1),
-      generateFace(5, 0, 1),
-      generateFace(7, 6, 2),
-      generateFace(6, 3, 2),
-      generateFace(5, 7, 0),
-      generateFace(7, 2, 0),
-      generateFace(1, 3, 4),
-      generateFace(3, 6, 4)
-    ];
-
     const geometry = new THREE.BufferGeometry();
-    geometry.setFromPoints(faces.flat(1));
+    geometry.setFromPoints(generatePoints(vertices));
     geometry.computeVertexNormals();
 
-    const material = new THREE.MeshLambertMaterial({ opacity: 0.6, color: 0x44ff44, transparent: true, wireframe: true });
+    const materials = [new THREE.MeshLambertMaterial({ opacity: 0.6, color: 0x44ff44, transparent: true }), new THREE.MeshBasicMaterial({ color: 0x000000, wireframe: true })];
 
-    const mesh = new THREE.Mesh(geometry, material);
-    mesh.position.setY(1.1);
-
+    const mesh = createMultiMaterialObject(geometry, materials);
     mesh.children.forEach(function (e) {
       e.castShadow = true;
     });
+    mesh.position.setY(1.1);
     scene.add(mesh);
 
-    console.log(mesh);
+    // control
+    const addControl = (x, y, z) => ({ x, y, z });
+    const controlPoints = [];
+    controlPoints.push(addControl(3, 5, 3));
+    controlPoints.push(addControl(3, 5, 0));
+    controlPoints.push(addControl(3, 0, 3));
+    controlPoints.push(addControl(3, 0, 0));
+    controlPoints.push(addControl(0, 5, 0));
+    controlPoints.push(addControl(0, 5, 3));
+    controlPoints.push(addControl(0, 0, 0));
+    controlPoints.push(addControl(0, 0, 3));
+    handleUpdate({ controlPoints });
 
     threeRef.current = {
       scene,
       camera,
       renderer,
-      plane
+      mesh,
+      generatePoints
     };
-  }
+  }, []);
 
   const renderScene = useCallback(() => {
-    const { stats, scene, camera, renderer } = threeRef.current;
+    const { stats, scene, camera, renderer, mesh } = threeRef.current;
 
     stats.update();
 
+    const vertices = data.controlPoints;
+
+    console.log(vertices);
+
+    mesh.children.forEach(e => {
+      // e.geometry.setFromPoints(generatePoints(vertices));
+      // e.geometry.computeVertexNormals();
+    });
+
     threeRef.current.timer = requestAnimationFrame(renderScene);
     renderer.render(scene, camera);
-  }, []);
+  }, [data]);
 
   // show FPS
   function initStats() {
@@ -150,7 +173,7 @@ export default function CustomGeometry() {
     window.addEventListener('resize', onResize);
 
     return () => window.removeEventListener('resize', onResize);
-  }, []);
+  }, [init]);
 
   useEffect(() => {
     renderScene();
@@ -167,23 +190,18 @@ export default function CustomGeometry() {
     <>
       <div ref={CustomGeometry} />
       <DatGui data={data} onUpdate={handleUpdate}>
-        <DatNumber path='rotationSpeed' label='RotationSpeed' min={0} max={0.1} step={0.01} />
+        {data.controlPoints &&
+          data.controlPoints.map(({ x, y, z }, idx) => (
+            <DatFolder key={idx} title={`Vertices ${idx + 1}`}>
+              <DatNumber path={`controlPoints.${idx}.x`} label='x' min={-10} max={10} step={1} />
+              <DatNumber path={`controlPoints.${idx}.y`} label='y' min={-10} max={10} step={1} />
+              <DatNumber path={`controlPoints.${idx}.z`} label='z' min={-10} max={10} step={1} />
+            </DatFolder>
+          ))}
         <DatButton
           label='addCube'
           onClick={() => {
             data.addCube();
-          }}
-        />
-        <DatButton
-          label='removeCube'
-          onClick={() => {
-            data.removeCube();
-          }}
-        />
-        <DatButton
-          label='outputObjects'
-          onClick={() => {
-            data.outputObjects();
           }}
         />
       </DatGui>
