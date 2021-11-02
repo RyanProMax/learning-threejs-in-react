@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { createMultiMaterialObject } from 'three/examples/jsm/utils/SceneUtils';
 import { useRef, useEffect, useCallback, useState } from 'react';
 import Stats from '../libs/Stats';
-import DatGui, { DatNumber, DatFolder, DatButton } from 'react-dat-gui';
+import DatGui, { DatNumber, DatFolder } from 'react-dat-gui';
 
 export default function CustomGeometry() {
   const CustomGeometry = useRef(null);
@@ -126,18 +126,19 @@ export default function CustomGeometry() {
   }, []);
 
   const renderScene = useCallback(() => {
-    const { stats, scene, camera, renderer, mesh } = threeRef.current;
+    const { stats, scene, camera, renderer, mesh, generatePoints } = threeRef.current;
 
     stats.update();
 
-    const vertices = data.controlPoints;
+    const vertices = data.controlPoints && data.controlPoints;
 
-    console.log(vertices);
-
-    mesh.children.forEach(e => {
-      // e.geometry.setFromPoints(generatePoints(vertices));
-      // e.geometry.computeVertexNormals();
-    });
+    vertices &&
+      mesh &&
+      mesh.children &&
+      mesh.children.forEach(e => {
+        e.geometry.setFromPoints(generatePoints(vertices));
+        e.geometry.computeVertexNormals();
+      });
 
     threeRef.current.timer = requestAnimationFrame(renderScene);
     renderer.render(scene, camera);
@@ -198,12 +199,6 @@ export default function CustomGeometry() {
               <DatNumber path={`controlPoints.${idx}.z`} label='z' min={-10} max={10} step={1} />
             </DatFolder>
           ))}
-        <DatButton
-          label='addCube'
-          onClick={() => {
-            data.addCube();
-          }}
-        />
       </DatGui>
     </>
   );
