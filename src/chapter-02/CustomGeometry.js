@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { createMultiMaterialObject } from 'three/examples/jsm/utils/SceneUtils';
 import { useRef, useEffect, useCallback, useState } from 'react';
 import Stats from '../libs/Stats';
-import DatGui, { DatNumber, DatFolder } from 'react-dat-gui';
+import DatGui, { DatNumber, DatFolder, DatButton } from 'react-dat-gui';
 
 export default function CustomGeometry() {
   const CustomGeometry = useRef(null);
@@ -144,6 +144,24 @@ export default function CustomGeometry() {
     renderer.render(scene, camera);
   }, [data]);
 
+  // clone
+  function clone() {
+    const { mesh, scene } = threeRef.current;
+    if (mesh && mesh.children) {
+      const cloneGeom = mesh.children[0].geometry.clone();
+      const materials = [new THREE.MeshLambertMaterial({ opacity: 0.6, color: 0xff44ff, transparent: true }), new THREE.MeshBasicMaterial({ color: 0x000000, wireframe: true })];
+      const mesh2 = createMultiMaterialObject(cloneGeom, materials);
+      mesh2.children.forEach(e => {
+        e.castShadow = true;
+      });
+      mesh2.translateX(5);
+      mesh2.translateZ(5);
+      mesh2.name = 'clone';
+      scene.remove(scene.getObjectByName('clone'));
+      scene.add(mesh2);
+    }
+  }
+
   // show FPS
   function initStats() {
     const stats = new Stats();
@@ -199,6 +217,7 @@ export default function CustomGeometry() {
               <DatNumber path={`controlPoints.${idx}.z`} label='z' min={-10} max={10} step={1} />
             </DatFolder>
           ))}
+        <DatButton label='clone' onClick={clone} />
       </DatGui>
     </>
   );
