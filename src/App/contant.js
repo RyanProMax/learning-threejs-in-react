@@ -4,6 +4,7 @@ import MaterialsLightAnimation from '../chapter-01/MaterialsLightAnimation';
 import ControlGui from '../chapter-01/ControlGui';
 import BasicScene from '../chapter-02/BasicScene';
 import CustomGeometry from '../chapter-02/CustomGeometry';
+import MeshProperties from '../chapter-02/MeshProperties';
 
 export const Routes = [
   {
@@ -43,6 +44,11 @@ export const Routes = [
         name: 'CustomGeometry',
         path: '/CustomGeometry',
         component: CustomGeometry
+      },
+      {
+        name: 'MeshProperties',
+        path: '/MeshProperties',
+        component: MeshProperties
       }
     ]
   }
